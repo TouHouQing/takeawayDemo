@@ -39,7 +39,7 @@
             parameterType="com.sky.dto.EmployeePageQueryDTO">
         select * from employee
         <where>
-            <if test="name != null and name != ''">
+            <if test="name != null">
                 and name like concat('%', #{name}, '%')//拼接
             </if>
         </where>

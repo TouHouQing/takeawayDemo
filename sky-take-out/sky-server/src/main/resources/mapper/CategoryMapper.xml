@@ -6,7 +6,7 @@
     <select id="pageQuery" resultType="com.sky.entity.Category">
         select * from category
         <where>
-            <if test="name != null and name != ''">
+            <if test="name != null">
                 and name like concat('%',#{name},'%')
             </if>
             <if test="type != null">
