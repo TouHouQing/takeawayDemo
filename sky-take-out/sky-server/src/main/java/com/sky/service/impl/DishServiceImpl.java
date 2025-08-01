@@ -16,15 +16,13 @@ import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
-import io.swagger.annotations.ApiOperation;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+
 
 import java.util.List;
 
@@ -89,7 +87,7 @@ public class DishServiceImpl implements DishService {
         //判断当前菜品是否能删除（是否在销售）
         for(Long id : ids){
             Dish dish = dishMapper.getById(id);
-            if(dish.getStatus() == StatusConstant.ENABLE){
+            if(dish.getStatus().equals(StatusConstant.ENABLE)){
                 //起售中的菜品不能删除
                 throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
             }
