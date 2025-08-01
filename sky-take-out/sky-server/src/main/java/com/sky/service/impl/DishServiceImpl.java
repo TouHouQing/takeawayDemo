@@ -17,6 +17,7 @@ import com.sky.result.Result;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
 import io.swagger.annotations.ApiOperation;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ import java.util.List;
 
 @Service
 @Slf4j
+@Builder
 public class DishServiceImpl implements DishService {
 
     @Autowired
@@ -39,8 +41,6 @@ public class DishServiceImpl implements DishService {
 
     @Autowired
     private SetmealDishMapper setmealDishMapper;
-    @Autowired
-    private DishService dishService;
 
     /**
      * 新增菜品和对应的口味数据
@@ -130,14 +130,6 @@ public class DishServiceImpl implements DishService {
         return dishVO;
     }
 
-    @PutMapping
-    @ApiOperation("修改菜品")
-    public Result update(@RequestBody DishDTO dishDTO) {
-        log.info("修改菜品:{}", dishDTO);
-        dishService.updateWithFlavor(dishDTO);
-        return Result.success();
-    }
-
     /**
      * 根据id修改菜品和对应的口味数据
      * @param dishDTO
@@ -159,5 +151,18 @@ public class DishServiceImpl implements DishService {
             //口味表插入n条数据
             dishFlavorMapper.insertBatch(flavors);
         }
+    }
+
+    /**
+     * 根据分类id查询菜品
+     * @param categoryId
+     * @return
+     */
+    public List<Dish> list(Long categoryId){
+        Dish dish = Dish.builder()
+                .categoryId(categoryId)
+                .status(StatusConstant.ENABLE)
+                .build();
+        return dishMapper.list(dish);
     }
 }
