@@ -11,3 +11,8 @@ sky:
     access-key-id: LTAI5tJzcSEY45izYsWscbz2
     access-key-secret: ${sky.alioss.access-key-secret}
     bucket-name: touhouqing
+  redis:
+    host: 43.143.215.162
+    port: 6379
+    password: ${sky.redis.password}
+    database: 0
