@@ -1,11 +1,13 @@
 package com.sky.config;
 
+import com.sky.json.JacksonObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
 
 @Configuration
 @Slf4j
@@ -19,9 +21,14 @@ public class RedisConfiguration {
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         //设置redis key序列化器
         redisTemplate.setKeySerializer(redisTemplate.getStringSerializer());
-        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        
+        // 使用自定义的JacksonObjectMapper创建GenericJackson2JsonRedisSerializer
+        GenericJackson2JsonRedisSerializer valueSerializer = new GenericJackson2JsonRedisSerializer(new JacksonObjectMapper());
+        redisTemplate.setValueSerializer(valueSerializer);
+        
         redisTemplate.setHashKeySerializer(redisTemplate.getStringSerializer());
-        redisTemplate.setHashValueSerializer(redisTemplate.getStringSerializer());
+        redisTemplate.setHashValueSerializer(valueSerializer);
+        
         return redisTemplate;
     }
 }
