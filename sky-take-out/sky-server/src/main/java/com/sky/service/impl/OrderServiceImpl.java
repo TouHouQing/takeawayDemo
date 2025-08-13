@@ -23,6 +23,8 @@ import com.sky.vo.OrderVO;
 import com.sky.websocket.WebSocketServer;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -145,6 +147,9 @@ public class OrderServiceImpl implements OrderService {
      *
      * @param outTradeNo
      */
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = "orderCache",key = "#outTradeNo")
     public void paySuccess(String outTradeNo) {
 
         // 根据订单号查询订单
@@ -196,6 +201,7 @@ public class OrderServiceImpl implements OrderService {
      * @param status
      */
     @Override
+    @Cacheable(cacheNames = "orderCache",key = "#pageNum + \"_\" + #pageSize + \"_\" + (#status != null ? #status : 'null')")
     public PageResult historyOrder(int pageNum, int pageSize, Integer status) {
         PageHelper.startPage(pageNum,pageSize);
         OrdersPageQueryDTO ordersPageQueryDTO = new OrdersPageQueryDTO();
@@ -212,6 +218,22 @@ public class OrderServiceImpl implements OrderService {
         }
         PageResult pageResult = new PageResult(page.getTotal(),list);
         return pageResult;
+    }
+
+    /**
+     * 订单详情
+     * @param id
+     * @return
+     */
+    @Override
+    @Cacheable(cacheNames = "orderCache",key = "#id")
+    public OrderVO orderDetail(Long id) {
+        OrderVO orderVO = new OrderVO();
+        Orders orders = orderMapper.getById(id);
+        List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(id);
+        BeanUtils.copyProperties(orders,orderVO);
+        orderVO.setOrderDetailList(orderDetailList);
+        return orderVO;
     }
 
 }

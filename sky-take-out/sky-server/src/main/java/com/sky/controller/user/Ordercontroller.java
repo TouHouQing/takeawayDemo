@@ -4,11 +4,14 @@ import com.sky.dto.OrdersDTO;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
+import com.sky.entity.OrderDetail;
+import com.sky.entity.Orders;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.OrderService;
 import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderSubmitVO;
+import com.sky.vo.OrderVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -76,5 +79,12 @@ public class Ordercontroller {
     public Result reminder(@PathVariable("id") Long id){
         orderService.reminder(id);
         return Result.success();
+    }
+
+    @GetMapping("/orderDetail/{id}")
+    @ApiOperation("订单详情")
+    public Result<OrderVO> orderDetail(@PathVariable("id") Long id){
+        OrderVO ordersDetail = orderService.orderDetail(id);
+        return Result.success(ordersDetail);
     }
 }
