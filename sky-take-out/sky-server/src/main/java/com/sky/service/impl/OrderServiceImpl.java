@@ -60,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     @Transactional
+    @CacheEvict(value = "orderCache", allEntries = true)
     public OrderSubmitVO submitOrder(OrdersSubmitDTO ordersSubmitDTO) {
 
         //处理业务异常情况（地址为空，购物车为空）
@@ -119,6 +120,8 @@ public class OrderServiceImpl implements OrderService {
      * @param ordersPaymentDTO
      * @return
      */
+    @Override
+    @CacheEvict(value = "orderCache", allEntries = true)
     public OrderPaymentVO payment(OrdersPaymentDTO ordersPaymentDTO) throws Exception {
         // 当前登录用户id
         Long userId = BaseContext.getCurrentId();
@@ -149,7 +152,7 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     @Transactional
-    @CacheEvict(cacheNames = "orderCache",key = "#outTradeNo")
+    @CacheEvict(value = "orderCache", allEntries = true)
     public void paySuccess(String outTradeNo) {
 
         // 根据订单号查询订单
@@ -236,4 +239,36 @@ public class OrderServiceImpl implements OrderService {
         return orderVO;
     }
 
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = "orderCache",key = "#id")
+    public void userCancelById(Long id) throws Exception {
+        Orders orderDB = orderMapper.getById(id);
+        if(orderDB == null){
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        //若商家已接单,派送中，用户取消订单需要电话沟通商家
+        if(orderDB.getStatus()>2){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        //查询订单状态，待支付和待接单可以直接取消订单，待接单状态需要给用户退款
+        Orders order = new Orders();
+        order.setId(id);
+        if(orderDB.getStatus().equals(Orders.TO_BE_CONFIRMED)){
+            //退款
+            //调用微信退款接口
+            //调用微信支付退款接口
+            weChatPayUtil.refund(
+                    orderDB.getNumber(), //商户订单号
+                    orderDB.getNumber(), //商户退款单号
+                    orderDB.getAmount(),//退款金额，单位 元
+                    orderDB.getAmount());//原订单金额
+            order.setPayStatus(Orders.REFUND);
+        }
+        //标记状态已取消
+        order.setStatus(Orders.CANCELLED);
+        order.setCancelReason("用户取消订单");
+        order.setCancelTime(LocalDateTime.now());
+        orderMapper.update(order);
+    }
 }
