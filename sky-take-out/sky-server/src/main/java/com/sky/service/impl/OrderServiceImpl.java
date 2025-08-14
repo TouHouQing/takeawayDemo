@@ -6,10 +6,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
-import com.sky.dto.OrdersConfirmDTO;
-import com.sky.dto.OrdersPageQueryDTO;
-import com.sky.dto.OrdersPaymentDTO;
-import com.sky.dto.OrdersSubmitDTO;
+import com.sky.dto.*;
 import com.sky.entity.*;
 import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
@@ -337,6 +334,39 @@ public class OrderServiceImpl implements OrderService {
         Orders orders = Orders.builder()
                 .id(ordersConfirmDTO.getId())
                 .status(Orders.CONFIRMED)
+                .build();
+        orderMapper.update(orders);
+    }
+
+    /**
+     * 拒单
+     * @param ordersRejectionDTO
+     */
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = "orderCache",allEntries = true)
+    public void rejection(OrdersRejectionDTO ordersRejectionDTO) throws  Exception {
+        Orders orderDB = orderMapper.getById(ordersRejectionDTO.getId());
+        if(!orderDB.getStatus().equals(Orders.TO_BE_CONFIRMED)){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
+        Integer payStatus = orderDB.getPayStatus();
+        if(payStatus == Orders.PAID){
+            //已支付，需要退款
+            weChatPayUtil.refund(
+                    orderDB.getNumber(), //商户订单号
+                    orderDB.getNumber(), //商户退款单号
+                    orderDB.getAmount(),//退款金额，单位 元
+                    orderDB.getAmount());//原订单金额
+        }
+
+        //拒单
+        Orders orders = Orders.builder()
+                .id(ordersRejectionDTO.getId())
+                .status(Orders.CANCELLED)
+                .rejectionReason(ordersRejectionDTO.getRejectionReason())
+                .cancelTime(LocalDateTime.now())
                 .build();
         orderMapper.update(orders);
     }
