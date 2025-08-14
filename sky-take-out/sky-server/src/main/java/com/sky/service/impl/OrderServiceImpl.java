@@ -394,6 +394,21 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(orders);
     }
 
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = "orderCache",allEntries = true)
+    public void delivery(Long id) throws Exception{
+        Orders orderDB = orderMapper.getById(id);
+        if(!orderDB.getStatus().equals(Orders.CONFIRMED)){
+            throw  new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        Orders orders = Orders.builder()
+                .id(orderDB.getId())
+                .status(Orders.DELIVERY_IN_PROGRESS)
+                .build();
+        orderMapper.update(orders);
+    }
+
     private List<OrderVO> getOrderVOList(Page<Orders> page){
         List<OrderVO> orderVOList = new ArrayList<>();
         List<Orders> ordersList = page.getResult();
