@@ -371,6 +371,29 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(orders);
     }
 
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = "orderCache",allEntries = true)
+    public void cancel(OrdersCancelDTO ordersCancelDTO) throws Exception {
+        Orders orderDB = orderMapper.getById(ordersCancelDTO.getId());
+
+        if(orderDB.getPayStatus().equals(Orders.PAID)){
+            //已支付，需要退款
+            weChatPayUtil.refund(
+                    orderDB.getNumber(), //商户订单号
+                    orderDB.getNumber(), //商户退款单号
+                    orderDB.getAmount(),//退款金额，单位 元
+                    orderDB.getAmount());//原订单金额
+        }
+        Orders orders = Orders.builder()
+                .id(ordersCancelDTO.getId())
+                .cancelReason(ordersCancelDTO.getCancelReason())
+                .cancelTime(LocalDateTime.now())
+                .status(Orders.CANCELLED)
+                .build();
+        orderMapper.update(orders);
+    }
+
     private List<OrderVO> getOrderVOList(Page<Orders> page){
         List<OrderVO> orderVOList = new ArrayList<>();
         List<Orders> ordersList = page.getResult();
