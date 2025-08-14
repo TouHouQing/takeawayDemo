@@ -371,6 +371,10 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(orders);
     }
 
+    /**
+     * 取消订单
+     * @param ordersCancelDTO
+     */
     @Override
     @Transactional
     @CacheEvict(cacheNames = "orderCache",allEntries = true)
@@ -394,10 +398,14 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(orders);
     }
 
+    /**
+     * 派送订单
+     * @param id
+     */
     @Override
     @Transactional
     @CacheEvict(cacheNames = "orderCache",allEntries = true)
-    public void delivery(Long id) throws Exception{
+    public void delivery(Long id){
         Orders orderDB = orderMapper.getById(id);
         if(!orderDB.getStatus().equals(Orders.CONFIRMED)){
             throw  new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
@@ -405,6 +413,26 @@ public class OrderServiceImpl implements OrderService {
         Orders orders = Orders.builder()
                 .id(orderDB.getId())
                 .status(Orders.DELIVERY_IN_PROGRESS)
+                .build();
+        orderMapper.update(orders);
+    }
+
+    /**
+     * 完成订单
+     * @param id
+     */
+    @Override
+    @Transactional
+    @CacheEvict(cacheNames = "orderCache",allEntries = true)
+    public void complete(Long id) {
+        Orders orderDB = orderMapper.getById(id);
+        if(!orderDB.getStatus().equals(Orders.DELIVERY_IN_PROGRESS)){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        Orders orders = Orders.builder()
+                .id(orderDB.getId())
+                .status(Orders.COMPLETED)
+                .deliveryTime(LocalDateTime.now())
                 .build();
         orderMapper.update(orders);
     }
