@@ -294,4 +294,48 @@ public class OrderServiceImpl implements OrderService {
         //将订单菜品添加到购物车
         shoppingCartMapper.insertBatch(shoppingCartList);
     }
+
+    /**
+     * 订单搜索
+     * @param ordersPageQueryDTO
+     * @return
+     */
+    @Override
+    @Cacheable(cacheNames = "orderCache",key = "#ordersPageQueryDTO")
+    public PageResult conditionSearch(OrdersPageQueryDTO ordersPageQueryDTO) {
+        PageHelper.startPage(ordersPageQueryDTO.getPage(),ordersPageQueryDTO.getPageSize());
+        Page<Orders> page = orderMapper.getByPageAndStatus(ordersPageQueryDTO);
+        List<OrderVO> list = new ArrayList<>();
+        //部分订单状态需要返回订单菜品信息
+        List<OrderVO> orderVOList = getOrderVOList(page);
+        PageResult pageResult = new PageResult(page.getTotal(),orderVOList);
+        return pageResult;
+    }
+
+    private List<OrderVO> getOrderVOList(Page<Orders> page){
+        List<OrderVO> orderVOList = new ArrayList<>();
+        List<Orders> ordersList = page.getResult();
+        if(!ordersList.isEmpty()){
+            for(Orders orders : ordersList){
+                OrderVO orderVO = new OrderVO();
+                BeanUtils.copyProperties(orders,orderVO);
+                //订单菜品信息
+                String orderDishes = getOrderDishesStr(orders);
+                orderVO.setOrderDishes(orderDishes);
+                orderVOList.add(orderVO);
+            }
+        }
+        return orderVOList;
+    }
+
+    private String getOrderDishesStr(Orders orders){
+        List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(orders.getId());
+        StringBuilder orderDishes = new StringBuilder();
+        for(OrderDetail orderDetail : orderDetailList){
+            String name = orderDetail.getName();
+            Integer number = orderDetail.getNumber();
+            orderDishes.append(name).append("*").append(number).append(";");
+        }
+        return orderDishes.toString();
+    }
 }
